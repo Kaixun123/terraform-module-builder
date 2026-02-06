@@ -1,11 +1,19 @@
 // =============================================================================
+// Cloud Provider Types
+// =============================================================================
+
+export type CloudProvider = 'aws' | 'azure';
+
+// =============================================================================
 // Core Project Configuration Types
 // =============================================================================
 
 export interface ProjectConfig {
   name: string;                    // e.g., "my-app"
-  region: string;                  // e.g., "us-east-1"
+  provider: CloudProvider;         // 'aws' or 'azure'
+  region: string;                  // e.g., "us-east-1" or "eastus"
   environment: string;             // e.g., "dev", "prod"
+  resourceGroup?: string;          // Azure only: resource group name
   services: ServiceSelection;
   tags: Record<string, string>;
 }
@@ -350,6 +358,7 @@ export interface Template {
   id: string;
   name: string;
   description: string;
+  provider: CloudProvider;
   services: Partial<ServiceSelection>;
 }
 
@@ -457,6 +466,7 @@ export interface ProjectStore {
   updateProjectName: (name: string) => void;
   updateRegion: (region: string) => void;
   updateEnvironment: (environment: string) => void;
+  setProvider: (provider: CloudProvider) => void;
   toggleService: (service: ServiceType, enabled: boolean) => void;
   updateServiceConfig: <T extends ServiceType>(
     service: T,

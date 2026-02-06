@@ -1,5 +1,6 @@
 import { ReactFlowProvider } from '@xyflow/react'
 import Header from './components/Header/Header'
+import { ProviderSelector } from './components/Sidebar/ProviderSelector'
 import TemplateSelector from './components/Sidebar/TemplateSelector'
 import ServiceSelector from './components/Sidebar/ServiceSelector'
 import ConfigPanel from './components/Sidebar/ConfigPanel'
@@ -11,18 +12,19 @@ function App() {
   return (
     <ErrorBoundary>
       <ReactFlowProvider>
-        <div className="h-screen flex flex-col bg-gray-900 text-gray-100">
+        <div className="h-screen flex flex-col bg-gray-900 text-gray-100 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800/30">
           <Header />
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-80 bg-gray-800 border-r border-gray-700 overflow-y-auto flex-shrink-0">
-              <div className="p-4 space-y-6">
+            <aside className="w-80 bg-gray-800/90 overflow-y-auto flex-shrink-0 shadow-xl shadow-black/20">
+              <div className="p-5 space-y-6">
+                <ProviderSelector />
                 <TemplateSelector />
                 <ServiceSelector />
                 <ConfigPanel />
               </div>
             </aside>
-            
+
             {/* Main Content */}
             <main className="flex-1 flex flex-col overflow-hidden">
               {/* Architecture Diagram */}
@@ -37,9 +39,9 @@ function App() {
                   <ArchitectureDiagram />
                 </ErrorBoundary>
               </div>
-              
+
               {/* Code Preview */}
-              <div className="h-80 border-t border-gray-700">
+              <div className="h-80 shadow-[0_-4px_20px_rgba(0,0,0,0.25)]">
                 <ErrorBoundary
                   fallback={
                     <div className="h-full bg-gray-800 flex items-center justify-center">

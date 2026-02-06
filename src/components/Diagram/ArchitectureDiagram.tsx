@@ -12,6 +12,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useProjectStore } from '../../stores/projectStore';
 import { SERVICE_METADATA } from '../../constants/dependencies';
+import { AZURE_SERVICE_METADATA } from '../../constants/azure/dependencies';
 import type { ServiceType, ProjectConfig } from '../../types';
 
 // =============================================================================
@@ -22,22 +23,25 @@ interface AWSNodeData {
   label: string;
   serviceType: ServiceType;
   description?: string;
+  isAzure?: boolean;
 }
 
 function AWSServiceNode({ data }: { data: AWSNodeData }) {
-  const metadata = SERVICE_METADATA[data.serviceType];
-  
+  const metadataSource = data.isAzure ? AZURE_SERVICE_METADATA : SERVICE_METADATA;
+  const metadata = metadataSource[data.serviceType];
+
   return (
     <div
-      className="px-3 py-2 rounded-lg border-2 shadow-lg min-w-[120px]"
+      className="px-3 py-2 rounded-xl min-w-[120px] shadow-lg transition-all duration-200"
       style={{
-        backgroundColor: `${metadata.color}20`,
-        borderColor: metadata.color,
+        backgroundColor: `${metadata.color}25`,
+        border: `1px solid ${metadata.color}60`,
+        boxShadow: `0 4px 14px rgba(0,0,0,0.25), 0 0 0 1px ${metadata.color}20`,
       }}
     >
       <div className="flex items-center gap-2">
         <div
-          className="w-7 h-7 rounded flex items-center justify-center text-white font-bold text-[10px]"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm"
           style={{ backgroundColor: metadata.color }}
         >
           {metadata.name.slice(0, 3).toUpperCase()}
@@ -56,14 +60,15 @@ function AWSServiceNode({ data }: { data: AWSNodeData }) {
 function VPCContainerNode({ data }: { data: AWSNodeData }) {
   return (
     <div
-      className="px-4 py-3 rounded-lg border-2 border-dashed min-w-[450px] min-h-[280px]"
+      className="px-4 py-3 rounded-xl min-w-[450px] min-h-[280px] border border-dashed shadow-lg"
       style={{
-        backgroundColor: 'rgba(255, 153, 0, 0.05)',
-        borderColor: '#FF9900',
+        backgroundColor: 'rgba(255, 153, 0, 0.08)',
+        borderColor: 'rgba(255, 153, 0, 0.5)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-6 h-6 rounded flex items-center justify-center text-white font-bold text-xs bg-orange-500">
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-xs bg-orange-500 shadow-sm">
           VPC
         </div>
         <span className="font-semibold text-white text-sm">{data.label}</span>
@@ -74,19 +79,21 @@ function VPCContainerNode({ data }: { data: AWSNodeData }) {
 
 function SubnetNode({ data }: { data: AWSNodeData & { isPublic?: boolean } }) {
   const isPublic = data.description?.includes('Public');
-  
+  const color = isPublic ? '#3F8624' : '#8B5CF6';
+
   return (
     <div
-      className="px-2 py-1.5 rounded border-2 min-w-[100px]"
+      className="px-2 py-1.5 rounded-lg min-w-[100px] shadow-md border border-white/10"
       style={{
-        backgroundColor: isPublic ? 'rgba(63, 134, 36, 0.2)' : 'rgba(139, 92, 246, 0.2)',
-        borderColor: isPublic ? '#3F8624' : '#8B5CF6',
+        backgroundColor: isPublic ? 'rgba(63, 134, 36, 0.25)' : 'rgba(139, 92, 246, 0.25)',
+        borderColor: `${color}60`,
+        boxShadow: `0 2px 8px rgba(0,0,0,0.2)`,
       }}
     >
       <div className="flex items-center gap-1.5">
         <div
-          className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px]"
-          style={{ backgroundColor: isPublic ? '#3F8624' : '#8B5CF6' }}
+          className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px] shadow-sm"
+          style={{ backgroundColor: color }}
         >
           SN
         </div>
@@ -120,6 +127,7 @@ function generateDiagramElements(project: ProjectConfig): {
   const edges: Edge[] = [];
   
   const s = project.services;
+  const isAzure = project.provider === 'azure';
   const hasVPC = s.vpc !== null;
   const hasSubnets = s.subnets !== null;
   const hasSecurityGroups = s.security_groups !== null;
@@ -136,6 +144,41 @@ function generateDiagramElements(project: ProjectConfig): {
   const hasSES = s.ses !== null;
   const hasIAM = s.iam !== null;
   const hasNAT = hasSubnets && s.subnets?.create_nat_gateway;
+  
+  // Service names based on provider
+  const serviceNames = isAzure ? {
+    vpc: 'Virtual Network',
+    igw: 'Internet Access',
+    natGateway: 'NAT Gateway',
+    ec2: 'Virtual Machine',
+    lambda: 'Azure Functions',
+    rds: 'Azure Database',
+    s3: 'Storage Account',
+    apiGateway: 'API Management',
+    sqs: 'Service Bus Queue',
+    sns: 'Service Bus Topic',
+    eventbridge: 'Event Grid',
+    cloudwatch: 'Azure Monitor',
+    cloudfront: 'Azure CDN',
+    ses: 'Communication Services',
+    iam: 'Managed Identity',
+  } : {
+    vpc: 'VPC',
+    igw: 'Internet Gateway',
+    natGateway: 'NAT Gateway',
+    ec2: 'EC2 Instance',
+    lambda: 'Lambda',
+    rds: 'RDS',
+    s3: 'S3 Bucket',
+    apiGateway: 'API Gateway',
+    sqs: 'SQS Queue',
+    sns: 'SNS Topic',
+    eventbridge: 'EventBridge',
+    cloudwatch: 'CloudWatch',
+    cloudfront: 'CloudFront',
+    ses: 'SES',
+    iam: 'IAM Role',
+  };
 
   const hasAnyService = hasVPC || hasSubnets || hasSecurityGroups || hasEC2 || 
     hasLambda || hasRDS || hasS3 || hasAPIGateway || hasSQS || hasSNS || 
@@ -156,8 +199,9 @@ function generateDiagramElements(project: ProjectConfig): {
       type: 'vpcContainer',
       position: { x: 50, y: vpcY },
       data: {
-        label: `${project.name}-vpc`,
+        label: `${project.name}-${isAzure ? 'vnet' : 'vpc'}`,
         serviceType: 'vpc',
+        isAzure,
       },
       style: { zIndex: 0 },
     });
@@ -168,9 +212,10 @@ function generateDiagramElements(project: ProjectConfig): {
       type: 'awsService',
       position: { x: 200, y: vpcY - 60 },
       data: {
-        label: 'Internet Gateway',
+        label: serviceNames.igw,
         serviceType: 'vpc',
         description: 'Public Access',
+        isAzure,
       },
     });
 
@@ -616,9 +661,9 @@ export default function ArchitectureDiagram() {
   if (!hasAnyService) {
     return (
       <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-gray-500 text-lg mb-2">No services selected</div>
-          <div className="text-gray-600 text-sm">
+        <div className="text-center rounded-2xl bg-gray-800/50 shadow-xl shadow-black/20 px-8 py-10 max-w-sm">
+          <div className="text-gray-400 text-base font-medium mb-2">No services selected</div>
+          <div className="text-gray-500 text-sm">
             Select a template or add services to see the architecture diagram
           </div>
         </div>
@@ -642,7 +687,7 @@ export default function ArchitectureDiagram() {
       >
         <Background color="#374151" gap={20} size={1} />
         <Controls
-          className="bg-gray-800 border-gray-700"
+          className="!bg-gray-800/95 !rounded-xl !shadow-lg !shadow-black/20 !border-0 !p-1"
           showInteractive={false}
         />
       </ReactFlow>

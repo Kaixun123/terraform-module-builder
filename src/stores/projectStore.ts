@@ -3,6 +3,7 @@ import type {
   ProjectConfig,
   ServiceSelection,
   ServiceType,
+  CloudProvider,
 } from '../types';
 import {
   DEFAULT_PROJECT_CONFIG,
@@ -22,6 +23,23 @@ import {
   DEFAULT_CLOUDFRONT_CONFIG,
   DEFAULT_SES_CONFIG,
 } from '../constants/defaults';
+import {
+  DEFAULT_AZURE_VNET_CONFIG,
+  DEFAULT_AZURE_SUBNET_CONFIG,
+  DEFAULT_AZURE_NSG_CONFIG,
+  DEFAULT_AZURE_VM_CONFIG,
+  DEFAULT_AZURE_STORAGE_CONFIG,
+  DEFAULT_AZURE_IDENTITY_CONFIG,
+  DEFAULT_AZURE_DATABASE_CONFIG,
+  DEFAULT_AZURE_FUNCTION_CONFIG,
+  DEFAULT_AZURE_APIM_CONFIG,
+  DEFAULT_AZURE_SERVICEBUS_QUEUE_CONFIG,
+  DEFAULT_AZURE_SERVICEBUS_TOPIC_CONFIG,
+  DEFAULT_AZURE_EVENTGRID_CONFIG,
+  DEFAULT_AZURE_MONITOR_CONFIG,
+  DEFAULT_AZURE_CDN_CONFIG,
+  DEFAULT_AZURE_COMMUNICATION_CONFIG,
+} from '../constants/azure/defaults';
 import { getTemplateById } from '../constants/templates';
 import {
   getAllDependencies,
@@ -44,6 +62,7 @@ interface ProjectStore {
   updateRegion: (region: string) => void;
   updateEnvironment: (environment: string) => void;
   updateTags: (tags: Record<string, string>) => void;
+  setProvider: (provider: CloudProvider) => void;
 
   // Service Actions
   toggleService: (service: ServiceType, enabled: boolean) => void;
@@ -68,56 +87,112 @@ interface ProjectStore {
 
 function getDefaultConfig(
   service: ServiceType,
-  projectName: string
+  projectName: string,
+  provider: CloudProvider = 'aws'
 ): NonNullable<ServiceSelection[ServiceType]> {
+  // AWS defaults
+  if (provider === 'aws') {
+    switch (service) {
+      case 'vpc':
+        return { ...DEFAULT_VPC_CONFIG };
+      case 'subnets':
+        return { ...DEFAULT_SUBNET_CONFIG };
+      case 'security_groups':
+        return { ...DEFAULT_SECURITY_GROUP_CONFIG };
+      case 'ec2':
+        return { ...DEFAULT_EC2_CONFIG };
+      case 'lambda':
+        return { ...DEFAULT_LAMBDA_CONFIG };
+      case 'rds':
+        return {
+          ...DEFAULT_RDS_CONFIG,
+          identifier: `${projectName || 'app'}-db`,
+        };
+      case 's3':
+        return {
+          ...DEFAULT_S3_CONFIG,
+          bucket_prefix: projectName || 'my-app',
+        };
+      case 'api_gateway':
+        return {
+          ...DEFAULT_API_GATEWAY_CONFIG,
+          name: `${projectName || 'app'}-api`,
+        };
+      case 'sqs':
+        return { ...DEFAULT_SQS_CONFIG };
+      case 'sns':
+        return { ...DEFAULT_SNS_CONFIG };
+      case 'eventbridge':
+        return { ...DEFAULT_EVENTBRIDGE_CONFIG };
+      case 'cloudwatch':
+        return { ...DEFAULT_CLOUDWATCH_CONFIG };
+      case 'cloudfront':
+        return {
+          ...DEFAULT_CLOUDFRONT_CONFIG,
+          comment: `${projectName || 'app'} CDN`,
+        };
+      case 'ses':
+        return {
+          ...DEFAULT_SES_CONFIG,
+          configuration_set_name: `${projectName || 'app'}-ses-config`,
+        };
+      case 'iam':
+        return {
+          ...DEFAULT_IAM_CONFIG,
+          role_name: `${projectName || 'app'}-role`,
+        };
+    }
+  }
+
+  // Azure defaults
   switch (service) {
     case 'vpc':
-      return { ...DEFAULT_VPC_CONFIG };
+      return { ...DEFAULT_AZURE_VNET_CONFIG };
     case 'subnets':
-      return { ...DEFAULT_SUBNET_CONFIG };
+      return { ...DEFAULT_AZURE_SUBNET_CONFIG };
     case 'security_groups':
-      return { ...DEFAULT_SECURITY_GROUP_CONFIG };
+      return { ...DEFAULT_AZURE_NSG_CONFIG };
     case 'ec2':
-      return { ...DEFAULT_EC2_CONFIG };
+      return { ...DEFAULT_AZURE_VM_CONFIG };
     case 'lambda':
-      return { ...DEFAULT_LAMBDA_CONFIG };
+      return { ...DEFAULT_AZURE_FUNCTION_CONFIG };
     case 'rds':
       return {
-        ...DEFAULT_RDS_CONFIG,
+        ...DEFAULT_AZURE_DATABASE_CONFIG,
         identifier: `${projectName || 'app'}-db`,
       };
     case 's3':
       return {
-        ...DEFAULT_S3_CONFIG,
+        ...DEFAULT_AZURE_STORAGE_CONFIG,
         bucket_prefix: projectName || 'my-app',
       };
     case 'api_gateway':
       return {
-        ...DEFAULT_API_GATEWAY_CONFIG,
+        ...DEFAULT_AZURE_APIM_CONFIG,
         name: `${projectName || 'app'}-api`,
       };
     case 'sqs':
-      return { ...DEFAULT_SQS_CONFIG };
+      return { ...DEFAULT_AZURE_SERVICEBUS_QUEUE_CONFIG };
     case 'sns':
-      return { ...DEFAULT_SNS_CONFIG };
+      return { ...DEFAULT_AZURE_SERVICEBUS_TOPIC_CONFIG };
     case 'eventbridge':
-      return { ...DEFAULT_EVENTBRIDGE_CONFIG };
+      return { ...DEFAULT_AZURE_EVENTGRID_CONFIG };
     case 'cloudwatch':
-      return { ...DEFAULT_CLOUDWATCH_CONFIG };
+      return { ...DEFAULT_AZURE_MONITOR_CONFIG };
     case 'cloudfront':
       return {
-        ...DEFAULT_CLOUDFRONT_CONFIG,
+        ...DEFAULT_AZURE_CDN_CONFIG,
         comment: `${projectName || 'app'} CDN`,
       };
     case 'ses':
       return {
-        ...DEFAULT_SES_CONFIG,
-        configuration_set_name: `${projectName || 'app'}-ses-config`,
+        ...DEFAULT_AZURE_COMMUNICATION_CONFIG,
+        configuration_set_name: `${projectName || 'app'}-comm`,
       };
     case 'iam':
       return {
-        ...DEFAULT_IAM_CONFIG,
-        role_name: `${projectName || 'app'}-role`,
+        ...DEFAULT_AZURE_IDENTITY_CONFIG,
+        role_name: `${projectName || 'app'}-identity`,
       };
   }
 }
@@ -206,21 +281,60 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       project: { ...state.project, tags },
     })),
 
+  // Provider Action
+  setProvider: (provider) =>
+    set((state) => {
+      // Reset services when changing provider
+      const emptyServices: ServiceSelection = {
+        vpc: null,
+        subnets: null,
+        security_groups: null,
+        ec2: null,
+        lambda: null,
+        rds: null,
+        s3: null,
+        api_gateway: null,
+        sqs: null,
+        sns: null,
+        eventbridge: null,
+        cloudfront: null,
+        ses: null,
+        cloudwatch: null,
+        iam: null,
+      };
+
+      // Set default region based on provider
+      const defaultRegion = provider === 'azure' ? 'eastus' : 'us-east-1';
+      const resourceGroup = provider === 'azure' ? `rg-${state.project.name}` : undefined;
+
+      return {
+        project: {
+          ...state.project,
+          provider,
+          region: defaultRegion,
+          resourceGroup,
+          services: emptyServices,
+        },
+        selectedTemplate: null,
+      };
+    }),
+
   // Service Actions
   toggleService: (service, enabled) =>
     set((state) => {
       const newServices = { ...state.project.services };
       const projectName = state.project.name;
+      const provider = state.project.provider || 'aws';
 
       if (enabled) {
         // Enable the service with default config
-        (newServices as Record<ServiceType, unknown>)[service] = getDefaultConfig(service, projectName);
+        (newServices as Record<ServiceType, unknown>)[service] = getDefaultConfig(service, projectName, provider);
 
         // Auto-enable all dependencies
         const deps = getAllDependencies(service);
         deps.forEach((dep) => {
           if (!newServices[dep]) {
-            (newServices as Record<ServiceType, unknown>)[dep] = getDefaultConfig(dep, projectName);
+            (newServices as Record<ServiceType, unknown>)[dep] = getDefaultConfig(dep, projectName, provider);
           }
         });
 
@@ -231,7 +345,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
         // If enabling CloudFront with S3 origin, ensure S3 is enabled
         if (service === 'cloudfront' && !newServices.s3) {
-          (newServices as Record<ServiceType, unknown>).s3 = getDefaultConfig('s3', projectName);
+          (newServices as Record<ServiceType, unknown>).s3 = getDefaultConfig('s3', projectName, provider);
         }
       } else {
         // Disable the service

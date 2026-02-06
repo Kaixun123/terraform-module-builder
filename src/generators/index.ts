@@ -1,4 +1,6 @@
 import type { ProjectConfig, GeneratedFile, GeneratedProject } from '../types';
+
+// AWS Generators
 import {
   generateNetworkingMain,
   generateNetworkingVariables,
@@ -73,10 +75,27 @@ import {
   generateLocals,
 } from './templates/root';
 
+// Azure Generator
+import { generateAzureTerraformProject } from './azure';
+
 /**
  * Generate all Terraform files for a project configuration
+ * Routes to appropriate generator based on cloud provider
  */
 export function generateTerraformProject(project: ProjectConfig): GeneratedProject {
+  // Route to Azure generator if provider is Azure
+  if (project.provider === 'azure') {
+    return generateAzureTerraformProject(project);
+  }
+
+  // Default: AWS generator
+  return generateAWSTerraformProject(project);
+}
+
+/**
+ * Generate AWS Terraform files
+ */
+function generateAWSTerraformProject(project: ProjectConfig): GeneratedProject {
   const rootFiles: GeneratedFile[] = [];
   const modules: GeneratedProject['modules'] = [];
 

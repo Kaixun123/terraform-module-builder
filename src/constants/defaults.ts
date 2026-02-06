@@ -213,6 +213,7 @@ export const DEFAULT_SES_CONFIG: SESConfig = {
 
 export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   name: 'my-terraform-project',
+  provider: 'aws',
   region: 'us-east-1',
   environment: 'dev',
   services: {

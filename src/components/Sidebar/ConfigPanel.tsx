@@ -14,6 +14,10 @@ import {
   CLOUDFRONT_PRICE_CLASSES,
 } from '../../constants/defaults';
 import { SERVICE_METADATA } from '../../constants/dependencies';
+import { AZURE_SERVICE_METADATA } from '../../constants/azure/dependencies';
+import {
+  AZURE_REGIONS,
+} from '../../constants/azure/regions';
 
 // Validation helpers
 const isValidProjectName = (name: string) => /^[a-z0-9-]{3,32}$/.test(name);
@@ -37,20 +41,20 @@ function Section({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden">
+    <div className="rounded-xl overflow-hidden shadow-lg shadow-black/20 bg-gray-800/80">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-750 hover:bg-gray-700 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-700/50 hover:bg-gray-700/80 transition-all duration-200"
       >
         <span
-          className="w-2 h-2 rounded-full flex-shrink-0"
+          className="w-2 h-2 rounded-full flex-shrink-0 shadow-sm"
           style={{ backgroundColor: color }}
         />
         <span className="font-medium text-white text-sm flex-1 text-left">
           {title}
         </span>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-gray-400 transition-transform duration-300 ease-out ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -63,7 +67,14 @@ function Section({
           />
         </svg>
       </button>
-      {isOpen && <div className="p-3 space-y-3 bg-gray-800/50">{children}</div>}
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <div className="p-3 space-y-3 bg-gray-800/50">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -95,6 +106,10 @@ export default function ConfigPanel() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const isAzure = project.provider === 'azure';
+  const serviceMetadata = isAzure ? AZURE_SERVICE_METADATA : SERVICE_METADATA;
+  const regions = isAzure ? AZURE_REGIONS : AWS_REGIONS;
+
   const validateField = (field: string, value: string, validator: (v: string) => boolean, message: string) => {
     if (!validator(value)) {
       setErrors((prev) => ({ ...prev, [field]: message }));
@@ -109,9 +124,9 @@ export default function ConfigPanel() {
   };
 
   const inputClass =
-    'w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500';
+    'input-soft w-full px-2.5 py-1.5 text-sm text-white';
   const selectClass =
-    'w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500';
+    'input-soft w-full px-2.5 py-1.5 text-sm text-white';
 
   const availableAZs = AVAILABILITY_ZONES[project.region] || [];
 
@@ -148,13 +163,13 @@ export default function ConfigPanel() {
             />
           </Field>
 
-          <Field label="AWS Region">
+          <Field label={isAzure ? "Azure Region" : "AWS Region"}>
             <select
               value={project.region}
               onChange={(e) => updateRegion(e.target.value)}
               className={selectClass}
             >
-              {AWS_REGIONS.map((region) => (
+              {regions.map((region) => (
                 <option key={region.value} value={region.value}>
                   {region.label}
                 </option>
@@ -179,7 +194,7 @@ export default function ConfigPanel() {
 
         {/* VPC Configuration */}
         {project.services.vpc && (
-          <Section title="VPC" color={SERVICE_METADATA.vpc.color}>
+          <Section title="VPC" color={serviceMetadata.vpc.color}>
             <Field label="CIDR Block" error={errors.vpcCidr}>
               <input
                 type="text"
@@ -208,7 +223,7 @@ export default function ConfigPanel() {
                       enable_dns_hostnames: e.target.checked,
                     })
                   }
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 DNS Hostnames
               </label>
@@ -221,7 +236,7 @@ export default function ConfigPanel() {
                       enable_dns_support: e.target.checked,
                     })
                   }
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 DNS Support
               </label>
@@ -231,7 +246,7 @@ export default function ConfigPanel() {
 
         {/* Subnets Configuration */}
         {project.services.subnets && (
-          <Section title="Subnets" color={SERVICE_METADATA.subnets.color}>
+          <Section title="Subnets" color={serviceMetadata.subnets.color}>
             <Field label="Public Subnet CIDRs (comma-separated)">
               <input
                 type="text"
@@ -283,7 +298,7 @@ export default function ConfigPanel() {
                           updateServiceConfig('subnets', { availability_zones: newAZs });
                         }
                       }}
-                      className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                      className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                     {az}
                   </label>
@@ -300,7 +315,7 @@ export default function ConfigPanel() {
                     create_nat_gateway: e.target.checked,
                   })
                 }
-                className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
               />
               Create NAT Gateway
             </label>
@@ -309,7 +324,7 @@ export default function ConfigPanel() {
 
         {/* Security Groups Configuration */}
         {project.services.security_groups && (
-          <Section title="Security Groups" color={SERVICE_METADATA.security_groups.color} defaultOpen={false}>
+          <Section title="Security Groups" color={serviceMetadata.security_groups.color} defaultOpen={false}>
             <p className="text-xs text-gray-400">
               {project.services.security_groups.groups.length} security group(s) configured.
               Groups: {project.services.security_groups.groups.map(g => g.name).join(', ')}
@@ -319,7 +334,7 @@ export default function ConfigPanel() {
 
         {/* EC2 Configuration */}
         {project.services.ec2 && (
-          <Section title="EC2" color={SERVICE_METADATA.ec2.color}>
+          <Section title="EC2" color={serviceMetadata.ec2.color}>
             <Field label="Instance Type">
               <select
                 value={project.services.ec2.instance_type}
@@ -372,7 +387,7 @@ export default function ConfigPanel() {
                     associate_public_ip: e.target.checked,
                   })
                 }
-                className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
               />
               Associate Public IP Address
             </label>
@@ -381,12 +396,12 @@ export default function ConfigPanel() {
 
         {/* Lambda Configuration */}
         {project.services.lambda && (
-          <Section title="Lambda" color={SERVICE_METADATA.lambda.color} defaultOpen={false}>
+          <Section title="Lambda" color={serviceMetadata.lambda.color} defaultOpen={false}>
             <p className="text-xs text-gray-500 mb-2">
               {project.services.lambda.functions.length} function(s) configured
             </p>
             {project.services.lambda.functions.map((func, index) => (
-              <div key={index} className="border border-gray-600 rounded p-2 space-y-2">
+              <div key={index} className="rounded-lg bg-gray-700/30 shadow-inner p-2.5 space-y-2">
                 <Field label="Function Name">
                   <input
                     type="text"
@@ -469,7 +484,7 @@ export default function ConfigPanel() {
                       newFunctions[index] = { ...func, vpc_enabled: e.target.checked };
                       updateServiceConfig('lambda', { functions: newFunctions });
                     }}
-                    className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                    className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                   />
                   Deploy in VPC
                 </label>
@@ -480,7 +495,7 @@ export default function ConfigPanel() {
 
         {/* RDS Configuration */}
         {project.services.rds && (
-          <Section title="RDS" color={SERVICE_METADATA.rds.color} defaultOpen={false}>
+          <Section title="RDS" color={serviceMetadata.rds.color} defaultOpen={false}>
             <Field label="Database Engine">
               <select
                 value={project.services.rds.engine}
@@ -554,7 +569,7 @@ export default function ConfigPanel() {
                   type="checkbox"
                   checked={project.services.rds.multi_az}
                   onChange={(e) => updateServiceConfig('rds', { multi_az: e.target.checked })}
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 Multi-AZ Deployment
               </label>
@@ -563,7 +578,7 @@ export default function ConfigPanel() {
                   type="checkbox"
                   checked={project.services.rds.storage_encrypted}
                   onChange={(e) => updateServiceConfig('rds', { storage_encrypted: e.target.checked })}
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 Encrypt Storage
               </label>
@@ -573,7 +588,7 @@ export default function ConfigPanel() {
 
         {/* S3 Configuration */}
         {project.services.s3 && (
-          <Section title="S3" color={SERVICE_METADATA.s3.color}>
+          <Section title="S3" color={serviceMetadata.s3.color}>
             <Field label="Bucket Prefix" error={errors.bucketPrefix}>
               <input
                 type="text"
@@ -603,7 +618,7 @@ export default function ConfigPanel() {
                       versioning_enabled: e.target.checked,
                     })
                   }
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 Enable Versioning
               </label>
@@ -616,7 +631,7 @@ export default function ConfigPanel() {
                       encryption_enabled: e.target.checked,
                     })
                   }
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 Enable Server-Side Encryption
               </label>
@@ -626,7 +641,7 @@ export default function ConfigPanel() {
 
         {/* API Gateway Configuration */}
         {project.services.api_gateway && (
-          <Section title="API Gateway" color={SERVICE_METADATA.api_gateway.color} defaultOpen={false}>
+          <Section title="API Gateway" color={serviceMetadata.api_gateway.color} defaultOpen={false}>
             <Field label="API Name">
               <input
                 type="text"
@@ -640,7 +655,7 @@ export default function ConfigPanel() {
                 type="checkbox"
                 checked={project.services.api_gateway.cors_enabled}
                 onChange={(e) => updateServiceConfig('api_gateway', { cors_enabled: e.target.checked })}
-                className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
               />
               Enable CORS
             </label>
@@ -652,7 +667,7 @@ export default function ConfigPanel() {
 
         {/* SQS Configuration */}
         {project.services.sqs && (
-          <Section title="SQS" color={SERVICE_METADATA.sqs.color} defaultOpen={false}>
+          <Section title="SQS" color={serviceMetadata.sqs.color} defaultOpen={false}>
             <p className="text-xs text-gray-500">
               {project.services.sqs.queues.length} queue(s) configured:
               {' '}{project.services.sqs.queues.map(q => q.name).join(', ')}
@@ -662,7 +677,7 @@ export default function ConfigPanel() {
 
         {/* SNS Configuration */}
         {project.services.sns && (
-          <Section title="SNS" color={SERVICE_METADATA.sns.color} defaultOpen={false}>
+          <Section title="SNS" color={serviceMetadata.sns.color} defaultOpen={false}>
             <p className="text-xs text-gray-500">
               {project.services.sns.topics.length} topic(s) configured:
               {' '}{project.services.sns.topics.map(t => t.name).join(', ')}
@@ -672,13 +687,13 @@ export default function ConfigPanel() {
 
         {/* EventBridge Configuration */}
         {project.services.eventbridge && (
-          <Section title="EventBridge" color={SERVICE_METADATA.eventbridge.color} defaultOpen={false}>
+          <Section title="EventBridge" color={serviceMetadata.eventbridge.color} defaultOpen={false}>
             <label className="flex items-center gap-2 text-sm text-gray-300">
               <input
                 type="checkbox"
                 checked={project.services.eventbridge.use_default_bus}
                 onChange={(e) => updateServiceConfig('eventbridge', { use_default_bus: e.target.checked })}
-                className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
               />
               Use Default Event Bus
             </label>
@@ -690,7 +705,7 @@ export default function ConfigPanel() {
 
         {/* CloudWatch Configuration */}
         {project.services.cloudwatch && (
-          <Section title="CloudWatch" color={SERVICE_METADATA.cloudwatch.color} defaultOpen={false}>
+          <Section title="CloudWatch" color={serviceMetadata.cloudwatch.color} defaultOpen={false}>
             <p className="text-xs text-gray-500">
               {project.services.cloudwatch.log_groups.length} log group(s),
               {' '}{project.services.cloudwatch.alarms.length} alarm(s) configured
@@ -700,7 +715,7 @@ export default function ConfigPanel() {
                 type="checkbox"
                 checked={project.services.cloudwatch.dashboard_enabled}
                 onChange={(e) => updateServiceConfig('cloudwatch', { dashboard_enabled: e.target.checked })}
-                className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
               />
               Create Dashboard
             </label>
@@ -709,7 +724,7 @@ export default function ConfigPanel() {
 
         {/* CloudFront Configuration */}
         {project.services.cloudfront && (
-          <Section title="CloudFront" color={SERVICE_METADATA.cloudfront.color} defaultOpen={false}>
+          <Section title="CloudFront" color={serviceMetadata.cloudfront.color} defaultOpen={false}>
             <Field label="Default Root Object">
               <input
                 type="text"
@@ -734,7 +749,7 @@ export default function ConfigPanel() {
 
         {/* SES Configuration */}
         {project.services.ses && (
-          <Section title="SES" color={SERVICE_METADATA.ses.color} defaultOpen={false}>
+          <Section title="SES" color={serviceMetadata.ses.color} defaultOpen={false}>
             <Field label="Domain Identity (optional)">
               <input
                 type="text"
@@ -749,7 +764,7 @@ export default function ConfigPanel() {
                 type="checkbox"
                 checked={project.services.ses.create_smtp_credentials}
                 onChange={(e) => updateServiceConfig('ses', { create_smtp_credentials: e.target.checked })}
-                className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
               />
               Create SMTP Credentials
             </label>
@@ -758,7 +773,7 @@ export default function ConfigPanel() {
 
         {/* IAM Configuration */}
         {project.services.iam && (
-          <Section title="IAM" color={SERVICE_METADATA.iam.color}>
+          <Section title="IAM" color={serviceMetadata.iam.color}>
             <Field label="Role Name">
               <input
                 type="text"
@@ -781,7 +796,7 @@ export default function ConfigPanel() {
                       create_instance_profile: e.target.checked,
                     })
                   }
-                  className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                  className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 Create Instance Profile
               </label>
@@ -793,7 +808,7 @@ export default function ConfigPanel() {
                     onChange={(e) =>
                       updateServiceConfig('iam', { s3_access: e.target.checked })
                     }
-                    className="rounded text-blue-500 bg-gray-700 border-gray-600"
+                    className="rounded-lg text-blue-500 bg-gray-700 border-gray-600 focus:ring-2 focus:ring-blue-500/50 transition-all"
                   />
                   Grant S3 Access
                 </label>

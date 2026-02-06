@@ -1,4 +1,4 @@
-import type { Template } from '../types';
+import type { Template, CloudProvider } from '../types';
 import {
   DEFAULT_VPC_CONFIG,
   DEFAULT_SUBNET_CONFIG,
@@ -10,12 +10,13 @@ import {
   DEFAULT_API_GATEWAY_CONFIG,
   DEFAULT_CLOUDFRONT_CONFIG,
 } from './defaults';
+import { AZURE_TEMPLATES } from './azure/templates';
 
 // =============================================================================
 // Pre-built Infrastructure Templates
 // =============================================================================
 
-export const TEMPLATES: Template[] = [
+export const AWS_TEMPLATES: Template[] = [
   // ==========================================================================
   // Blank Template
   // ==========================================================================
@@ -23,6 +24,7 @@ export const TEMPLATES: Template[] = [
     id: 'blank',
     name: 'Blank Project',
     description: 'Start from scratch - select services manually',
+    provider: 'aws',
     services: {},
   },
 
@@ -33,6 +35,7 @@ export const TEMPLATES: Template[] = [
     id: 'simple-web',
     name: 'Simple Web Server',
     description: 'VPC + public subnet + EC2 with security group',
+    provider: 'aws',
     services: {
       vpc: { ...DEFAULT_VPC_CONFIG },
       subnets: {
@@ -52,6 +55,7 @@ export const TEMPLATES: Template[] = [
     id: 'web-with-storage',
     name: 'Web App with Storage',
     description: 'Web server + S3 bucket with EC2 access permissions',
+    provider: 'aws',
     services: {
       vpc: { ...DEFAULT_VPC_CONFIG },
       subnets: {
@@ -72,6 +76,7 @@ export const TEMPLATES: Template[] = [
     id: 'multi-tier',
     name: 'Multi-Tier Architecture',
     description: 'VPC with public/private subnets, NAT Gateway, EC2, S3',
+    provider: 'aws',
     services: {
       vpc: { ...DEFAULT_VPC_CONFIG },
       subnets: {
@@ -98,6 +103,7 @@ export const TEMPLATES: Template[] = [
     id: 'serverless-api',
     name: 'Serverless REST API',
     description: 'API Gateway + Lambda - fully serverless backend',
+    provider: 'aws',
     services: {
       iam: { ...DEFAULT_IAM_CONFIG, s3_access: false },
       lambda: {
@@ -141,6 +147,7 @@ export const TEMPLATES: Template[] = [
     id: 'event-driven',
     name: 'Event-Driven Architecture',
     description: 'EventBridge + Lambda + SQS + SNS - decoupled microservices',
+    provider: 'aws',
     services: {
       iam: { ...DEFAULT_IAM_CONFIG, s3_access: false },
       lambda: {
@@ -232,6 +239,7 @@ export const TEMPLATES: Template[] = [
     id: 'static-website-cdn',
     name: 'Static Website with CDN',
     description: 'S3 + CloudFront - global static site hosting',
+    provider: 'aws',
     services: {
       iam: { ...DEFAULT_IAM_CONFIG, s3_access: false },
       s3: {
@@ -249,6 +257,7 @@ export const TEMPLATES: Template[] = [
     id: 'full-stack-serverless',
     name: 'Full-Stack Serverless',
     description: 'VPC + RDS + Lambda + API Gateway + S3 + CloudFront',
+    provider: 'aws',
     services: {
       vpc: { ...DEFAULT_VPC_CONFIG },
       subnets: {
@@ -344,6 +353,7 @@ export const TEMPLATES: Template[] = [
     id: 'scheduled-jobs',
     name: 'Scheduled Jobs',
     description: 'EventBridge + Lambda - cron-based background processing',
+    provider: 'aws',
     services: {
       iam: { ...DEFAULT_IAM_CONFIG, s3_access: false },
       lambda: {
@@ -411,6 +421,7 @@ export const TEMPLATES: Template[] = [
     id: 'notification-system',
     name: 'Notification System',
     description: 'SNS + SQS + Lambda + SES - multi-channel notifications',
+    provider: 'aws',
     services: {
       iam: { ...DEFAULT_IAM_CONFIG, s3_access: false },
       sns: {
@@ -496,11 +507,21 @@ export const TEMPLATES: Template[] = [
 ];
 
 // =============================================================================
+// All Templates (AWS + Azure)
+// =============================================================================
+
+export const TEMPLATES: Template[] = [...AWS_TEMPLATES, ...AZURE_TEMPLATES];
+
+// =============================================================================
 // Template Helper Functions
 // =============================================================================
 
 export function getTemplateById(id: string): Template | undefined {
   return TEMPLATES.find((t) => t.id === id);
+}
+
+export function getTemplatesByProvider(provider: CloudProvider): Template[] {
+  return TEMPLATES.filter((t) => t.provider === provider);
 }
 
 export function getTemplateNames(): { id: string; name: string }[] {

@@ -75,9 +75,9 @@ export default function CodePreview() {
 
   if (fileTree.length === 0) {
     return (
-      <div className="h-full bg-gray-800 flex flex-col">
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-700">
-          <span className="text-sm text-gray-400">Code Preview</span>
+      <div className="h-full bg-gray-800/95 flex flex-col">
+        <div className="flex items-center gap-2 px-4 py-2.5 shadow-sm">
+          <span className="text-sm text-gray-400 font-medium">Code Preview</span>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-500 text-sm">
@@ -89,14 +89,14 @@ export default function CodePreview() {
   }
 
   return (
-    <div className="h-full bg-gray-800 flex">
+    <div className="h-full bg-gray-800/95 flex shadow-inner">
       {/* File Tree Sidebar */}
-      <div className="w-48 border-r border-gray-700 overflow-y-auto flex-shrink-0">
-        <div className="p-2">
+      <div className="w-48 overflow-y-auto flex-shrink-0 shadow-lg shadow-black/10">
+        <div className="p-3">
           {Object.entries(groupedFiles).map(([group, files]) => (
-            <div key={group} className="mb-2">
+            <div key={group} className="mb-3">
               {group !== 'root' && (
-                <div className="text-xs font-medium text-gray-500 uppercase px-2 py-1">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider px-2 py-1.5">
                   {group.replace('modules/', '')}
                 </div>
               )}
@@ -104,10 +104,10 @@ export default function CodePreview() {
                 <button
                   key={filePath}
                   onClick={() => setSelectedFile(filePath)}
-                  className={`w-full text-left px-2 py-1 text-xs rounded flex items-center gap-1 ${
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center gap-2 transition-all duration-200 ${
                     activeFile === filePath
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700'
+                      ? 'bg-blue-600/90 text-white shadow-md shadow-blue-500/20'
+                      : 'text-gray-300 hover:bg-gray-700/80'
                   }`}
                 >
                   <span>{getFileIcon(filePath)}</span>
@@ -122,15 +122,15 @@ export default function CodePreview() {
       {/* Editor */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* File tabs */}
-        <div className="flex items-center gap-1 px-2 py-1 border-b border-gray-700 bg-gray-850 overflow-x-auto">
+        <div className="flex items-center gap-1 px-2 py-1.5 bg-gray-800/80 overflow-x-auto rounded-t-lg">
           {fileTree.slice(0, 6).map((filePath) => (
             <button
               key={filePath}
               onClick={() => setSelectedFile(filePath)}
-              className={`px-3 py-1 text-xs rounded-t flex items-center gap-1 whitespace-nowrap ${
+              className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 whitespace-nowrap transition-all duration-200 ${
                 activeFile === filePath
-                  ? 'bg-gray-700 text-white border-t border-l border-r border-gray-600'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-gray-700 text-white shadow-inner'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
               }`}
             >
               {getDisplayName(filePath)}
@@ -144,7 +144,7 @@ export default function CodePreview() {
         </div>
 
         {/* Monaco Editor */}
-        <div className="flex-1">
+        <div className="flex-1 rounded-b-lg overflow-hidden shadow-inner">
           <Editor
             height="100%"
             language="hcl"
