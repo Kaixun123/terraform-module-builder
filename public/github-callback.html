@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head><title>GitHub Auth</title></head>
+  <body>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('github_token');
+      const error = params.get('github_error');
+      if (window.opener) {
+        window.opener.postMessage(
+          { type: 'github_oauth', token, error },
+          window.location.origin
+        );
+        window.close();
+      } else {
+        document.body.innerText = 'Authentication complete. You can close this window.';
+      }
+    </script>
+  </body>
+</html>
