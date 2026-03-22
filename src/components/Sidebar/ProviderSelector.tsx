@@ -1,19 +1,9 @@
 import { useProjectStore } from '../../stores/projectStore';
 import type { CloudProvider } from '../../types';
 
-const providers: { id: CloudProvider; name: string; icon: string; color: string }[] = [
-  {
-    id: 'aws',
-    name: 'Amazon Web Services',
-    icon: '☁️',
-    color: '#FF9900',
-  },
-  {
-    id: 'azure',
-    name: 'Microsoft Azure',
-    icon: '⬡',
-    color: '#0078D4',
-  },
+const providers: { id: CloudProvider; name: string; description: string; color: string }[] = [
+  { id: 'aws',   name: 'AWS',   description: 'Amazon Web Services', color: '#FF9900' },
+  { id: 'azure', name: 'Azure', description: 'Microsoft Azure',     color: '#0078D4' },
 ];
 
 export function ProviderSelector() {
@@ -21,60 +11,53 @@ export function ProviderSelector() {
   const currentProvider = project.provider || 'aws';
 
   const handleProviderChange = (provider: CloudProvider) => {
-    if (provider !== currentProvider) {
-      // Confirm if services are selected
-      const hasServices = Object.values(project.services).some((s) => s !== null);
-      if (hasServices) {
-        const confirmed = window.confirm(
-          `Switching to ${provider === 'aws' ? 'AWS' : 'Azure'} will reset all selected services. Continue?`
-        );
-        if (!confirmed) return;
-      }
-      setProvider(provider);
+    if (provider === currentProvider) return;
+    const hasServices = Object.values(project.services).some((s) => s !== null);
+    if (hasServices) {
+      const confirmed = window.confirm(
+        `Switching to ${provider === 'aws' ? 'AWS' : 'Azure'} will reset all selected services. Continue?`
+      );
+      if (!confirmed) return;
     }
+    setProvider(provider);
   };
 
   return (
-    <div className="mb-6">
-      <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 px-1">
-        Cloud Provider
-      </h3>
-      <div className="grid grid-cols-2 gap-3">
-        {providers.map((provider) => (
-          <button
-            key={provider.id}
-            onClick={() => handleProviderChange(provider.id)}
-            className={`
-              btn-soft relative flex flex-col items-center justify-center p-4 rounded-xl
-              transition-all duration-200 ease-out
-              ${
-                currentProvider === provider.id
-                  ? 'ring-2 ring-blue-500/50 bg-blue-500/10 shadow-lg shadow-blue-500/10'
-                  : 'bg-gray-800/60 shadow-md shadow-black/10 hover:bg-gray-700/60 hover:shadow-lg hover:scale-[1.02]'
-              }
-            `}
-          >
-            <span className="text-2xl mb-1.5">{provider.icon}</span>
-            <span
-              className={`text-xs font-medium ${
-                currentProvider === provider.id ? 'text-blue-400' : 'text-gray-300'
+    <div>
+      <h3 className="section-label mb-3">Cloud Provider</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {providers.map((provider) => {
+          const active = currentProvider === provider.id;
+          return (
+            <button
+              key={provider.id}
+              onClick={() => handleProviderChange(provider.id)}
+              className={`relative flex flex-col items-center gap-1.5 p-3.5 rounded-xl border transition-all duration-150 ${
+                active
+                  ? 'border-blue-300 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {provider.id === 'aws' ? 'AWS' : 'Azure'}
-            </span>
-            {currentProvider === provider.id && (
               <div
-                className="absolute top-2 right-2 w-2 h-2 rounded-full shadow-sm"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
                 style={{ backgroundColor: provider.color }}
-              />
-            )}
-          </button>
-        ))}
+              >
+                {provider.id === 'aws' ? 'AWS' : 'Az'}
+              </div>
+              <span className={`text-xs font-semibold ${active ? 'text-blue-700' : 'text-gray-700'}`}>
+                {provider.name}
+              </span>
+              {active && (
+                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500" />
+              )}
+            </button>
+          );
+        })}
       </div>
-      <p className="text-xs text-gray-500 mt-2 px-1">
+      <p className="text-xs text-gray-400 mt-2">
         {currentProvider === 'aws'
-          ? 'Generate Terraform for Amazon Web Services'
-          : 'Generate Terraform for Microsoft Azure'}
+          ? 'Generating Terraform for Amazon Web Services'
+          : 'Generating Terraform for Microsoft Azure'}
       </p>
     </div>
   );

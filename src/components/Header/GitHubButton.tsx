@@ -25,16 +25,16 @@ export default function GitHubButton() {
 
   if (token && user) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
         <img
           src={user.avatar_url}
           alt={user.login}
-          className="w-7 h-7 rounded-full ring-1 ring-gray-600"
+          className="w-6 h-6 rounded-full ring-1 ring-gray-300"
         />
-        <span className="text-sm text-gray-300 hidden sm:block">{user.login}</span>
+        <span className="text-sm text-gray-700 hidden sm:block">{user.login}</span>
         <button
           onClick={signOut}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
           Sign out
         </button>
@@ -46,10 +46,10 @@ export default function GitHubButton() {
     <button
       onClick={handleSignIn}
       disabled={isAuthenticating}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 active:scale-95 ${
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 active:scale-95 ${
         isAuthenticating
-          ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-          : 'bg-gray-700 hover:bg-gray-600 text-gray-200 hover:text-white'
+          ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
+          : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
       }`}
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
   Controls,
   Node,
   Edge,
@@ -31,25 +32,18 @@ function AWSServiceNode({ data }: { data: AWSNodeData }) {
   const metadata = metadataSource[data.serviceType];
 
   return (
-    <div
-      className="px-3 py-2 rounded-xl min-w-[120px] shadow-lg transition-all duration-200"
-      style={{
-        backgroundColor: `${metadata.color}25`,
-        border: `1px solid ${metadata.color}60`,
-        boxShadow: `0 4px 14px rgba(0,0,0,0.25), 0 0 0 1px ${metadata.color}20`,
-      }}
-    >
-      <div className="flex items-center gap-2">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm px-3 py-2.5 min-w-[140px] hover:shadow-md transition-shadow duration-150">
+      <div className="flex items-center gap-2.5">
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0"
           style={{ backgroundColor: metadata.color }}
         >
           {metadata.name.slice(0, 3).toUpperCase()}
         </div>
         <div>
-          <div className="font-semibold text-white text-xs">{data.label}</div>
+          <div className="font-semibold text-gray-900 text-xs leading-tight">{data.label}</div>
           {data.description && (
-            <div className="text-[10px] text-gray-400 truncate max-w-[100px]">{data.description}</div>
+            <div className="text-[10px] text-gray-500 truncate max-w-[100px] mt-0.5">{data.description}</div>
           )}
         </div>
       </div>
@@ -58,20 +52,24 @@ function AWSServiceNode({ data }: { data: AWSNodeData }) {
 }
 
 function VPCContainerNode({ data }: { data: AWSNodeData }) {
+  const badge = data.isAzure ? 'VNet' : 'VPC';
+
   return (
     <div
-      className="px-4 py-3 rounded-xl min-w-[450px] min-h-[280px] border border-dashed shadow-lg"
+      className="px-4 py-3 rounded-2xl min-w-[450px] min-h-[280px] border-2 border-dashed"
       style={{
-        backgroundColor: 'rgba(255, 153, 0, 0.08)',
-        borderColor: 'rgba(255, 153, 0, 0.5)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        backgroundColor: 'rgba(255, 153, 0, 0.04)',
+        borderColor: 'rgba(255, 153, 0, 0.3)',
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-xs bg-orange-500 shadow-sm">
-          VPC
+        <div
+          className="px-2 py-0.5 rounded-md flex items-center justify-center text-white font-bold text-[10px]"
+          style={{ backgroundColor: '#FF9900' }}
+        >
+          {badge}
         </div>
-        <span className="font-semibold text-white text-sm">{data.label}</span>
+        <span className="font-semibold text-gray-700 text-sm">{data.label}</span>
       </div>
     </div>
   );
@@ -83,25 +81,22 @@ function SubnetNode({ data }: { data: AWSNodeData & { isPublic?: boolean } }) {
 
   return (
     <div
-      className="px-2 py-1.5 rounded-lg min-w-[100px] shadow-md border border-white/10"
+      className="px-2.5 py-2 rounded-lg min-w-[100px] border"
       style={{
-        backgroundColor: isPublic ? 'rgba(63, 134, 36, 0.25)' : 'rgba(139, 92, 246, 0.25)',
-        borderColor: `${color}60`,
-        boxShadow: `0 2px 8px rgba(0,0,0,0.2)`,
+        backgroundColor: isPublic ? 'rgba(63, 134, 36, 0.08)' : 'rgba(139, 92, 246, 0.08)',
+        borderColor: `${color}35`,
       }}
     >
       <div className="flex items-center gap-1.5">
         <div
-          className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px] shadow-sm"
+          className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px]"
           style={{ backgroundColor: color }}
         >
           SN
         </div>
         <div>
-          <div className="font-medium text-white text-[10px]">{data.label}</div>
-          <div className="text-[8px] text-gray-400">
-            {isPublic ? 'Public' : 'Private'}
-          </div>
+          <div className="font-medium text-gray-800 text-[10px]">{data.label}</div>
+          <div className="text-[9px] text-gray-500">{isPublic ? 'Public' : 'Private'}</div>
         </div>
       </div>
     </div>
@@ -125,7 +120,7 @@ function generateDiagramElements(project: ProjectConfig): {
 } {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
-  
+
   const s = project.services;
   const isAzure = project.provider === 'azure';
   const hasVPC = s.vpc !== null;
@@ -144,8 +139,8 @@ function generateDiagramElements(project: ProjectConfig): {
   const hasSES = s.ses !== null;
   const hasIAM = s.iam !== null;
   const hasNAT = hasSubnets && s.subnets?.create_nat_gateway;
-  
-  // Service names based on provider
+
+  // Service labels based on provider
   const serviceNames = isAzure ? {
     vpc: 'Virtual Network',
     igw: 'Internet Access',
@@ -160,7 +155,7 @@ function generateDiagramElements(project: ProjectConfig): {
     eventbridge: 'Event Grid',
     cloudwatch: 'Azure Monitor',
     cloudfront: 'Azure CDN',
-    ses: 'Communication Services',
+    ses: 'Communication Svc',
     iam: 'Managed Identity',
   } : {
     vpc: 'VPC',
@@ -180,8 +175,8 @@ function generateDiagramElements(project: ProjectConfig): {
     iam: 'IAM Role',
   };
 
-  const hasAnyService = hasVPC || hasSubnets || hasSecurityGroups || hasEC2 || 
-    hasLambda || hasRDS || hasS3 || hasAPIGateway || hasSQS || hasSNS || 
+  const hasAnyService = hasVPC || hasSubnets || hasSecurityGroups || hasEC2 ||
+    hasLambda || hasRDS || hasS3 || hasAPIGateway || hasSQS || hasSNS ||
     hasEventBridge || hasCloudWatch || hasCloudFront || hasSES || hasIAM;
 
   if (!hasAnyService) {
@@ -192,7 +187,7 @@ function generateDiagramElements(project: ProjectConfig): {
   const externalY = hasVPC ? 420 : 50;
   let externalX = 50;
 
-  // VPC Node (as container)
+  // VPC / VNet container
   if (hasVPC) {
     nodes.push({
       id: 'vpc',
@@ -206,7 +201,7 @@ function generateDiagramElements(project: ProjectConfig): {
       style: { zIndex: 0 },
     });
 
-    // Internet Gateway
+    // Internet Gateway / Internet Access
     nodes.push({
       id: 'igw',
       type: 'awsService',
@@ -244,6 +239,7 @@ function generateDiagramElements(project: ProjectConfig): {
           label: `Pub ${index + 1}`,
           serviceType: 'subnets',
           description: `Public - ${cidr}`,
+          isAzure,
         },
         parentId: hasVPC ? 'vpc' : undefined,
         extent: hasVPC ? 'parent' : undefined,
@@ -261,6 +257,7 @@ function generateDiagramElements(project: ProjectConfig): {
           label: `Priv ${index + 1}`,
           serviceType: 'subnets',
           description: `Private - ${cidr}`,
+          isAzure,
         },
         parentId: hasVPC ? 'vpc' : undefined,
         extent: hasVPC ? 'parent' : undefined,
@@ -274,9 +271,10 @@ function generateDiagramElements(project: ProjectConfig): {
         type: 'awsService',
         position: { x: 300, y: 110 },
         data: {
-          label: 'NAT Gateway',
+          label: serviceNames.natGateway,
           serviceType: 'subnets',
           description: 'Private → Internet',
+          isAzure,
         },
         parentId: hasVPC ? 'vpc' : undefined,
         extent: hasVPC ? 'parent' : undefined,
@@ -302,7 +300,7 @@ function generateDiagramElements(project: ProjectConfig): {
     }
   }
 
-  // EC2 Instance
+  // EC2 / Virtual Machine
   if (hasEC2) {
     if (hasSubnets && s.subnets?.public_subnet_cidrs.length) {
       nodes.push({
@@ -310,9 +308,10 @@ function generateDiagramElements(project: ProjectConfig): {
         type: 'awsService',
         position: { x: 20, y: 110 },
         data: {
-          label: 'EC2',
+          label: serviceNames.ec2,
           serviceType: 'ec2',
           description: s.ec2?.instance_type,
+          isAzure,
         },
         parentId: hasVPC ? 'vpc' : undefined,
         extent: hasVPC ? 'parent' : undefined,
@@ -329,16 +328,17 @@ function generateDiagramElements(project: ProjectConfig): {
         type: 'awsService',
         position: { x: externalX, y: externalY },
         data: {
-          label: 'EC2',
+          label: serviceNames.ec2,
           serviceType: 'ec2',
           description: s.ec2?.instance_type,
+          isAzure,
         },
       });
       externalX += 160;
     }
   }
 
-  // RDS Database
+  // RDS / Azure Database
   if (hasRDS) {
     if (hasSubnets && s.subnets?.private_subnet_cidrs.length) {
       nodes.push({
@@ -346,9 +346,10 @@ function generateDiagramElements(project: ProjectConfig): {
         type: 'awsService',
         position: { x: 150, y: 110 },
         data: {
-          label: 'RDS',
+          label: serviceNames.rds,
           serviceType: 'rds',
           description: s.rds?.engine,
+          isAzure,
         },
         parentId: hasVPC ? 'vpc' : undefined,
         extent: hasVPC ? 'parent' : undefined,
@@ -365,9 +366,10 @@ function generateDiagramElements(project: ProjectConfig): {
         type: 'awsService',
         position: { x: externalX, y: externalY },
         data: {
-          label: 'RDS',
+          label: serviceNames.rds,
           serviceType: 'rds',
           description: s.rds?.engine,
+          isAzure,
         },
       });
       externalX += 160;
@@ -378,16 +380,17 @@ function generateDiagramElements(project: ProjectConfig): {
   let serverlessX = hasVPC ? 550 : externalX;
   const serverlessY = 80;
 
-  // API Gateway
+  // API Gateway / API Management
   if (hasAPIGateway) {
     nodes.push({
       id: 'api_gateway',
       type: 'awsService',
       position: { x: serverlessX, y: serverlessY },
       data: {
-        label: 'API Gateway',
+        label: serviceNames.apiGateway,
         serviceType: 'api_gateway',
         description: s.api_gateway?.name,
+        isAzure,
       },
     });
     serverlessX += 160;
@@ -403,7 +406,7 @@ function generateDiagramElements(project: ProjectConfig): {
     }
   }
 
-  // Lambda
+  // Lambda / Azure Functions
   if (hasLambda) {
     const funcCount = s.lambda?.functions.length || 0;
     nodes.push({
@@ -411,9 +414,10 @@ function generateDiagramElements(project: ProjectConfig): {
       type: 'awsService',
       position: { x: serverlessX, y: serverlessY },
       data: {
-        label: 'Lambda',
+        label: serviceNames.lambda,
         serviceType: 'lambda',
         description: `${funcCount} function(s)`,
+        isAzure,
       },
     });
     serverlessX += 160;
@@ -429,16 +433,17 @@ function generateDiagramElements(project: ProjectConfig): {
     }
   }
 
-  // EventBridge
+  // EventBridge / Event Grid
   if (hasEventBridge) {
     nodes.push({
       id: 'eventbridge',
       type: 'awsService',
       position: { x: serverlessX, y: serverlessY },
       data: {
-        label: 'EventBridge',
+        label: serviceNames.eventbridge,
         serviceType: 'eventbridge',
         description: 'Event Bus',
+        isAzure,
       },
     });
     serverlessX += 160;
@@ -458,16 +463,17 @@ function generateDiagramElements(project: ProjectConfig): {
   let messagingX = hasVPC ? 550 : externalX;
   const messagingY = serverlessY + 100;
 
-  // SQS
+  // SQS / Service Bus Queue
   if (hasSQS) {
     nodes.push({
       id: 'sqs',
       type: 'awsService',
       position: { x: messagingX, y: messagingY },
       data: {
-        label: 'SQS',
+        label: serviceNames.sqs,
         serviceType: 'sqs',
         description: `${s.sqs?.queues.length || 0} queue(s)`,
+        isAzure,
       },
     });
     messagingX += 160;
@@ -483,16 +489,17 @@ function generateDiagramElements(project: ProjectConfig): {
     }
   }
 
-  // SNS
+  // SNS / Service Bus Topic
   if (hasSNS) {
     nodes.push({
       id: 'sns',
       type: 'awsService',
       position: { x: messagingX, y: messagingY },
       data: {
-        label: 'SNS',
+        label: serviceNames.sns,
         serviceType: 'sns',
         description: `${s.sns?.topics.length || 0} topic(s)`,
+        isAzure,
       },
     });
     messagingX += 160;
@@ -511,31 +518,33 @@ function generateDiagramElements(project: ProjectConfig): {
   let storageX = externalX;
   const storageY = externalY;
 
-  // S3 Bucket
+  // S3 / Storage Account
   if (hasS3) {
     nodes.push({
       id: 's3',
       type: 'awsService',
       position: { x: storageX, y: storageY },
       data: {
-        label: 'S3',
+        label: serviceNames.s3,
         serviceType: 's3',
         description: s.s3?.bucket_prefix,
+        isAzure,
       },
     });
     storageX += 160;
   }
 
-  // CloudFront
+  // CloudFront / Azure CDN
   if (hasCloudFront) {
     nodes.push({
       id: 'cloudfront',
       type: 'awsService',
       position: { x: storageX, y: storageY },
       data: {
-        label: 'CloudFront',
+        label: serviceNames.cloudfront,
         serviceType: 'cloudfront',
         description: 'CDN',
+        isAzure,
       },
     });
     storageX += 160;
@@ -551,16 +560,17 @@ function generateDiagramElements(project: ProjectConfig): {
     }
   }
 
-  // IAM
+  // IAM / Managed Identity
   if (hasIAM) {
     nodes.push({
       id: 'iam',
       type: 'awsService',
       position: { x: storageX, y: storageY },
       data: {
-        label: 'IAM',
+        label: serviceNames.iam,
         serviceType: 'iam',
         description: s.iam?.role_name,
+        isAzure,
       },
     });
     storageX += 160;
@@ -585,31 +595,33 @@ function generateDiagramElements(project: ProjectConfig): {
     }
   }
 
-  // CloudWatch
+  // CloudWatch / Azure Monitor
   if (hasCloudWatch) {
     nodes.push({
       id: 'cloudwatch',
       type: 'awsService',
       position: { x: storageX, y: storageY },
       data: {
-        label: 'CloudWatch',
+        label: serviceNames.cloudwatch,
         serviceType: 'cloudwatch',
         description: 'Monitoring',
+        isAzure,
       },
     });
     storageX += 160;
   }
 
-  // SES
+  // SES / Communication Services
   if (hasSES) {
     nodes.push({
       id: 'ses',
       type: 'awsService',
       position: { x: storageX, y: storageY },
       data: {
-        label: 'SES',
+        label: serviceNames.ses,
         serviceType: 'ses',
         description: 'Email',
+        isAzure,
       },
     });
     storageX += 160;
@@ -622,12 +634,6 @@ function generateDiagramElements(project: ProjectConfig): {
         style: { stroke: '#DD344C' },
       });
     }
-  }
-
-  // Security Groups (note in diagram if present)
-  if (hasSecurityGroups) {
-    // Security groups are implicitly shown via VPC - no separate node needed
-    // They are part of the VPC infrastructure
   }
 
   return { nodes, edges };
@@ -660,10 +666,10 @@ export default function ArchitectureDiagram() {
 
   if (!hasAnyService) {
     return (
-      <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-        <div className="text-center rounded-2xl bg-gray-800/50 shadow-xl shadow-black/20 px-8 py-10 max-w-sm">
-          <div className="text-gray-400 text-base font-medium mb-2">No services selected</div>
-          <div className="text-gray-500 text-sm">
+      <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+        <div className="text-center rounded-2xl bg-white border border-gray-200 shadow-sm px-8 py-10 max-w-sm">
+          <div className="text-gray-500 text-base font-medium mb-2">No services selected</div>
+          <div className="text-gray-400 text-sm">
             Select a template or add services to see the architecture diagram
           </div>
         </div>
@@ -672,7 +678,7 @@ export default function ArchitectureDiagram() {
   }
 
   return (
-    <div className="w-full h-full bg-gray-900">
+    <div className="w-full h-full bg-gray-50">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -681,13 +687,11 @@ export default function ArchitectureDiagram() {
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-        }}
+        defaultEdgeOptions={{ type: 'smoothstep' }}
       >
-        <Background color="#374151" gap={20} size={1} />
+        <Background color="#D1D5DB" gap={20} size={1} variant={BackgroundVariant.Dots} />
         <Controls
-          className="!bg-gray-800/95 !rounded-xl !shadow-lg !shadow-black/20 !border-0 !p-1"
+          className="!bg-white !rounded-xl !shadow-sm !border !border-gray-200 !p-1"
           showInteractive={false}
         />
       </ReactFlow>

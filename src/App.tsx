@@ -45,12 +45,12 @@ function App() {
   return (
     <ErrorBoundary>
       <ReactFlowProvider>
-        <div className="h-screen flex flex-col bg-gray-900 text-gray-100 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800/30">
+        <div className="h-screen flex flex-col bg-gray-50 text-gray-900">
           <Header onCreatePR={() => setShowPRModal(true)} />
           {showPRModal && <PRModal onClose={() => setShowPRModal(false)} />}
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-80 bg-gray-800/90 overflow-y-auto flex-shrink-0 shadow-xl shadow-black/20">
+            <aside className="w-80 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
               <div className="p-5 space-y-6">
                 <ProviderSelector />
                 <TemplateSelector />
